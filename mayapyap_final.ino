@@ -27,8 +27,6 @@ const int POLL_INTERVAL = 200;    // ms loop delay
 // STATES
 bool active = true;      // System ON
 bool reverse = false;    // Button toggled
-bool prevButton = HIGH;  // For edge detection
-bool prevClosed = false; // To detect state change
 
 void setup() {
   LinearActuator.attach(LINEAR_PIN);
@@ -53,24 +51,19 @@ void loop() {
 
   // BUTTON EDGE DETECTION
   bool buttonState = digitalRead(BUTTON_PIN);
-  if (buttonState == LOW && prevButton == HIGH) {
-    reverse = !reverse; // Toggle reversal
-    Serial.println(reverse ? "SYSTEM REVERSED" : "SYSTEM NORMAL");
+  if (buttonState == HIGH) {
+    reverse = !reverse;
   }
-  prevButton = buttonState;
 
   // Determine system state
   bool shouldClose = isRaining;
   if (reverse) shouldClose = !shouldClose;
 
   // Only act if state changed
-  if (shouldClose != prevClosed) {
-    prevClosed = shouldClose;
-    if (shouldClose) {
-      closeSystem();
-    } else {
-      openSystem();
-    }
+  if (shouldClose) {
+    openSystem();
+  } else {
+    closeSystem();
   }
 
   Serial.println(rainValue);
@@ -87,20 +80,24 @@ void openSystem() {
   // Doors open (full speed)
   Door_1.write(180); // one direction
   Door_2.write(0);   // opposite direction
+  Serial.println("OPENING DOOR");
   delay(ACTION_DURATION);
   Door_1.write(90);  // stop
   Door_2.write(90);  // stop
+  Serial.println("STOPPING DOOR");
 
   // Linear actuator pushes clothes out
   LinearActuator.write(180); // push
+  Serial.println("PUSHING EXTENDER");
   delay(ACTION_DURATION);
   LinearActuator.write(90);  // stop
+  Serial.println("STOPPING EXTENDER");
 
   // Fan OFF, Relay ON
   analogWrite(FAN_YELLOW_PIN, 0);
   digitalWrite(RELAY_PIN, HIGH);
 
-  Serial.println("SYSTEM IS OPEN");
+  Serial.println("---SYSTEM IS OPEN---");
 }
 
 void closeSystem() {
@@ -111,18 +108,22 @@ void closeSystem() {
   // Doors close (full speed opposite)
   Door_1.write(0);   // opposite direction
   Door_2.write(180);
+  Serial.println("CLOSING DOOR");
   delay(ACTION_DURATION);
   Door_1.write(90);  // stop
   Door_2.write(90);  // stop
+  Serial.println("STOPPING DOOR");
 
   // Linear actuator retracts clothes
   LinearActuator.write(0);   // retract
+  Serial.println("RETRACTING EXTENDER");
   delay(ACTION_DURATION);
   LinearActuator.write(90);  // stop
+  Serial.println("STOPPING EXTENDER");
 
   // Fan ON, Relay OFF
   digitalWrite(RELAY_PIN, LOW);
   analogWrite(FAN_YELLOW_PIN, FAN_SPEED);
 
-  Serial.println("SYSTEM IS CLOSED");
+  Serial.println("---SYSTEM IS CLOSED---");
 }
