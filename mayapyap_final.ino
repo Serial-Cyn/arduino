@@ -25,8 +25,8 @@ const int ACTION_DURATION = 1000; // ms for servo run
 const int POLL_INTERVAL = 200;    // ms loop delay
 
 // STATES
-bool active = true;      // System ON
 bool reverse = false;    // Button toggled
+bool prevState = false;
 
 void setup() {
   LinearActuator.attach(LINEAR_PIN);
@@ -58,6 +58,11 @@ void loop() {
   // Determine system state
   bool shouldClose = isRaining;
   if (reverse) shouldClose = !shouldClose;
+
+  if (shouldClose == prevState) {
+    return;
+  }
+  prevState = shouldClose;
 
   // Only act if state changed
   if (shouldClose) {
